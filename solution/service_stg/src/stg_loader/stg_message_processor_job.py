@@ -36,6 +36,15 @@ class StgMessageProcessor:
             if message is None:
                 break
 
+            # Пропускаем служебные/некорректные сообщения без payload и фиксируем offset,
+            # чтобы consumer не пытался обрабатывать такое сообщение повторно после перезапуска.
+            if "payload" not in message:
+                self._logger.warning(
+                    f"Message without payload: {json.dumps(message, ensure_ascii=False)}"
+                )
+                self._consumer.commit()
+                continue
+
             payload = message["payload"]
 
             # 1. Сохраняем оригинальное событие as-is в STG.
@@ -92,7 +101,8 @@ class StgMessageProcessor:
                     },
                     "user": {
                         "id": user["_id"],
-                        "name": user["name"]
+                        "name": user["name"],
+                        "login": user["login"]
                     },
                     "products": products
                 }
@@ -100,6 +110,9 @@ class StgMessageProcessor:
 
             # 6. Отправляем обогащённое сообщение в Kafka.
             self._producer.produce(output_message)
+
+            # 7. Фиксируем offset только после успешной обработки сообщения.
+            self._consumer.commit()
 
         # Пишем в лог, что джоб успешно завершен.
         self._logger.info(f"{datetime.utcnow()}: FINISH")
