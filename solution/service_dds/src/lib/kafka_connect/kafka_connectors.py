@@ -65,3 +65,6 @@ class KafkaConsumer:
             raise Exception(msg.error())
         val = msg.value().decode()
         return json.loads(val)
+
+    def commit(self) -> None:
+        self.c.commit(asynchronous=False)
