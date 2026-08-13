@@ -20,6 +20,7 @@ if __name__ == '__main__':
     app.logger.setLevel(logging.DEBUG)
 
     proc = DdsMessageProcessor(
+        config.kafka_consumer(),
         app.logger
     )
 
