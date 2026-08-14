@@ -9,7 +9,15 @@ def error_callback(err):
 
 
 class KafkaProducer:
-    def __init__(self, host: str, port: int, user: str, password: str, topic: str, cert_path: str) -> None:
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        user: str,
+        password: str,
+        topic: str,
+        cert_path: str
+    ) -> None:
         params = {
             'bootstrap.servers': f'{host}:{port}',
             'security.protocol': 'SASL_SSL',
@@ -24,15 +32,33 @@ class KafkaProducer:
         self.p = Producer(params)
 
     def produce(self, payload: Dict) -> None:
-        self.p.produce(self.topic, json.dumps(payload))
+        delivery_error = None
 
+        # Kafka вызовет callback после завершения доставки сообщения
+        def delivery_callback(err, msg) -> None:
+            nonlocal delivery_error
+
+            if err is not None:
+                delivery_error = err
+
+        self.p.produce(
+            self.topic,
+            json.dumps(payload),
+            callback=delivery_callback
+        )
+
+        # Ждём завершения доставки сообщения
         remaining = self.p.flush(10)
 
         if remaining > 0:
             raise RuntimeError(
-                f'Failed to deliver {remaining} Kafka message(s)'
+                f'Не удалось доставить сообщений в Kafka: {remaining}'
             )
 
+        if delivery_error is not None:
+            raise RuntimeError(
+                f'Ошибка доставки сообщения в Kafka: {delivery_error}'
+            )
 
 class KafkaConsumer:
     def __init__(self,

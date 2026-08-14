@@ -14,7 +14,7 @@ BEGIN
     );
 
     CREATE INDEX IF NOT EXISTS ix_outbox_unsent
-        ON dds.outbox (created_at)
+        ON dds.outbox (id)
         WHERE sent_at IS NULL;
 END
 $$;
