@@ -25,7 +25,13 @@ class KafkaProducer:
 
     def produce(self, payload: Dict) -> None:
         self.p.produce(self.topic, json.dumps(payload))
-        self.p.flush(10)
+
+        remaining = self.p.flush(10)
+
+        if remaining > 0:
+            raise RuntimeError(
+                f'Failed to deliver {remaining} Kafka message(s)'
+            )
 
 
 class KafkaConsumer:

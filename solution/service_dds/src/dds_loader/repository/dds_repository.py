@@ -4,11 +4,9 @@ from datetime import datetime
 
 from lib.pg import PgConnect
 
-
+# Генерируем детерминированный hash key из переданных значений
 def generate_hash_key(*values: object) -> uuid.UUID:
-    # Генерируем детерминированный hash key из переданных значений
     source = '|'.join(str(value) for value in values)
-
     return uuid.uuid5(
         uuid.NAMESPACE_DNS,
         source
@@ -907,3 +905,46 @@ class DdsRepository:
                 'created_at': created_at
             }
         )
+
+    # Получаем неотправленное событие из Outbox
+    def get_unsent_event(self) -> dict | None:
+        with self._db.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT
+                        id,
+                        payload
+                    FROM dds.outbox
+                    WHERE sent_at IS NULL
+                    ORDER BY id
+                    LIMIT 1
+                    """
+                )
+
+                row = cur.fetchone()
+
+                if row is None:
+                    return None
+
+                return {
+                    'id': row[0],
+                    'payload': row[1]
+                }
+
+    # Отмечаем отправленное событие в Outbox
+    def mark_event_sent(self, event_id: int) -> None:
+        with self._db.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE dds.outbox
+                    SET sent_at = %(sent_at)s
+                    WHERE id = %(event_id)s
+                    AND sent_at IS NULL
+                    """,
+                    {
+                        'event_id': event_id,
+                        'sent_at': datetime.utcnow()
+                    }
+                )
