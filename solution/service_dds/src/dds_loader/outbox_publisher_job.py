@@ -35,12 +35,12 @@ class OutboxPublisher:
             )
 
             self._logger.info(
-                f"Outbox event id={event['id']} published"
+                f"Событие id={event['id']} успешно отправлено"
             )
 
         except Exception:
             self._logger.exception(
-                f"Failed to publish outbox event id={event['id']}"
+                f"Не удалось отправить событие id={event['id']}"
             )
 
         self._logger.info(f"{datetime.utcnow()}: OUTBOX FINISH")
