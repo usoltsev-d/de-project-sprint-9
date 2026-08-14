@@ -1,4 +1,5 @@
 import uuid
+import json
 from datetime import datetime
 
 from lib.pg import PgConnect
@@ -140,6 +141,9 @@ class DdsRepository:
                     load_src
                 )
 
+                # Собираем товары для выходного сообщения
+                output_products = []
+
                 # Обрабатываем все товары заказа
                 for product in products:
 
@@ -232,6 +236,31 @@ class DdsRepository:
                         load_dt,
                         load_src
                     )
+
+                    # Добавляем товары в выходное сообщение
+                    output_products.append(
+                        {
+                            'product_id': str(h_product_pk),
+                            'product_name': product['name'],
+                            'category_id': str(h_category_pk),
+                            'category_name': product['category']
+                        }
+                    )
+
+                # Формируем выходное сообщение для CDM
+                output_message = {
+                    'order_id': str(h_order_pk),
+                    'user_id': str(h_user_pk),
+                    'products': output_products
+                }
+
+                # Записываем выходное сообщение в Outbox в рамках одной транзакции
+                self._insert_outbox(
+                    cur,
+                    h_order_pk,
+                    output_message,
+                    load_dt
+                )
 
     def _insert_h_user(
         self,
@@ -845,5 +874,36 @@ class DdsRepository:
                 'load_dt': load_dt,
                 'load_src': load_src,
                 'hashdiff': hashdiff
+            }
+        )
+
+    def _insert_outbox(
+        self,
+        cur,
+        order_id: uuid.UUID,
+        payload: dict,
+        created_at: datetime
+    ) -> None:
+        # Сохраняем выходное событие в Outbox для последующей отправки в Kafka
+        cur.execute(
+            """
+            INSERT INTO dds.outbox
+            (
+                order_id,
+                payload,
+                created_at
+            )
+            VALUES
+            (
+                %(order_id)s,
+                %(payload)s::jsonb,
+                %(created_at)s
+            )
+            ON CONFLICT (order_id) DO NOTHING
+            """,
+            {
+                'order_id': order_id,
+                'payload': json.dumps(payload, ensure_ascii=False),
+                'created_at': created_at
             }
         )
