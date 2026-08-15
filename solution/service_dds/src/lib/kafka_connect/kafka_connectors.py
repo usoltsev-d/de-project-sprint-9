@@ -43,7 +43,7 @@ class KafkaProducer:
 
         self.p.produce(
             self.topic,
-            json.dumps(payload),
+            json.dumps(payload, ensure_ascii=False),
             callback=delivery_callback
         )
 
@@ -81,7 +81,7 @@ class KafkaConsumer:
             'auto.offset.reset': 'earliest',
             'enable.auto.commit': False,
             'error_cb': error_callback,
-            'debug': 'all',
+            #'debug': 'all',
             'client.id': 'someclientkey'
         }
 

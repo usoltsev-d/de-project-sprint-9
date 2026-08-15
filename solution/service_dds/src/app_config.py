@@ -5,7 +5,10 @@ from lib.pg import PgConnect
 
 
 class AppConfig:
-    CERTIFICATE_PATH = '/crt/YandexInternalRootCA.crt'
+    CERTIFICATE_PATH = os.getenv(
+        'CERTIFICATE_PATH',
+        '/crt/YandexInternalRootCA.crt'
+    )
 
     def __init__(self) -> None:
 
