@@ -8,8 +8,6 @@
 
 ## Container Registry
 
-STG:
-cr.yandex/crpqg2ustmet33rjclbf/stg_service:v2026-08-13-r2
+STG: cr.yandex/crpqg2ustmet33rjclbf/stg_service:v2026-08-13-r2
 
-DDS:
-cr.yandex/crpqg2ustmet33rjclbf/dds_service:v2026-08-15-r1
+DDS: cr.yandex/crpqg2ustmet33rjclbf/dds_service:v2026-08-15-r1

@@ -19,28 +19,31 @@ class OutboxPublisher:
     def run(self) -> None:
         self._logger.info(f"{datetime.utcnow()}: OUTBOX START")
 
-        event = self._repository.get_unsent_event()
+        batch_size = 50
 
-        if event is None:
-            self._logger.info(f"{datetime.utcnow()}: OUTBOX FINISH")
-            return
+        for _ in range(batch_size):
+            event = self._repository.get_unsent_event()
 
-        try:
-            self._producer.produce(
-                event['payload']
-            )
+            if event is None:
+                break
 
-            self._repository.mark_event_sent(
-                event['id']
-            )
+            try:
+                self._producer.produce(
+                    event['payload']
+                )
 
-            self._logger.info(
-                f"Событие id={event['id']} успешно отправлено"
-            )
+                self._repository.mark_event_sent(
+                    event['id']
+                )
 
-        except Exception:
-            self._logger.exception(
-                f"Не удалось отправить событие id={event['id']}"
-            )
+                self._logger.info(
+                    f"Событие id={event['id']} успешно отправлено"
+                )
+
+            except Exception:
+                self._logger.exception(
+                    f"Не удалось отправить событие id={event['id']}"
+                )
+                break
 
         self._logger.info(f"{datetime.utcnow()}: OUTBOX FINISH")
