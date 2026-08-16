@@ -925,15 +925,15 @@ class DdsRepository:
                     }
                 )
 
-            rows = cur.fetchall()
+                rows = cur.fetchall()
 
-            return [
-                {
-                    'id': row[0],
-                    'payload': row[1]
-                }
-                for row in rows
-            ]
+                return [
+                    {
+                        'id': row[0],
+                        'payload': row[1]
+                    }
+                    for row in rows
+                ]
 
     # Отмечаем отправленные события в Outbox
     def mark_events_sent(self, event_ids: list[int]) -> None:
