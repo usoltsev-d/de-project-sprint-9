@@ -31,34 +31,35 @@ class KafkaProducer:
         self.topic = topic
         self.p = Producer(params)
 
-    def produce(self, payload: Dict) -> None:
-        delivery_error = None
-
+    def produce_batch(self, events: list[dict]) -> list[int]:
+        sent_event_ids = []
         # Kafka вызовет callback после завершения доставки сообщения
-        def delivery_callback(err, msg) -> None:
-            nonlocal delivery_error
+        def delivery_callback(err, msg, event_id: int) -> None:
+            if err is None:
+                sent_event_ids.append(
+                    event_id
+                )
 
-            if err is not None:
-                delivery_error = err
+        for event in events:
+            event_id = event['id']
 
-        self.p.produce(
-            self.topic,
-            json.dumps(payload, ensure_ascii=False),
-            callback=delivery_callback
-        )
-
-        # Ждём завершения доставки сообщения
-        remaining = self.p.flush(10)
-
-        if remaining > 0:
-            raise RuntimeError(
-                f'Не удалось доставить сообщений в Kafka: {remaining}'
+            self.p.produce(
+                self.topic,
+                json.dumps(
+                    event['payload'],
+                    ensure_ascii=False
+                ),
+                callback=lambda err, msg, event_id=event_id:
+                    delivery_callback(
+                        err,
+                        msg,
+                        event_id
+                    )
             )
 
-        if delivery_error is not None:
-            raise RuntimeError(
-                f'Ошибка доставки сообщения в Kafka: {delivery_error}'
-            )
+        self.p.flush(10)
+
+        return sent_event_ids
 
 class KafkaConsumer:
     def __init__(self,

@@ -21,34 +21,33 @@ class OutboxPublisher:
 
         batch_size = 50
 
+        # Забираем пачку событий из Outbox
         events = self._repository.get_unsent_events(
             batch_size
         )
 
-        sent_event_ids = []
+        if not events:
+            self._logger.info(f"{datetime.utcnow()}: OUTBOX FINISH")
+            return
 
-        for event in events:
-            try:
-                self._producer.produce(
-                    event['payload']
-                )
+        try:
+            # Отправляем всю пачку в Kafka одним flush
+            sent_event_ids = self._producer.produce_batch(
+                events
+            )
 
-                sent_event_ids.append(
-                    event['id']
-                )
+            # Одним UPDATE отмечаем успешно отправленные события
+            self._repository.mark_events_sent(
+                sent_event_ids
+            )
 
-            except Exception:
-                self._logger.exception(
-                    f"Не удалось отправить событие id={event['id']}"
-                )
-                break
+            self._logger.info(
+                f"Успешно отправлено событий: {len(sent_event_ids)}"
+            )
 
-        self._repository.mark_events_sent(
-            sent_event_ids
-        )
-
-        self._logger.info(
-            f"Успешно отправлено событий: {len(sent_event_ids)}"
-        )
+        except Exception:
+            self._logger.exception(
+                "Ошибка отправки пачки событий в Kafka"
+            )
 
         self._logger.info(f"{datetime.utcnow()}: OUTBOX FINISH")
