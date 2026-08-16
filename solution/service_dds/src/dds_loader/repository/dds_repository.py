@@ -906,8 +906,8 @@ class DdsRepository:
             }
         )
 
-    # Получаем неотправленное событие из Outbox
-    def get_unsent_event(self) -> dict | None:
+    # Получаем пачку неотправленных событие из Outbox
+    def get_unsent_events(self, batch_size: int) -> list[dict]:
         with self._db.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -918,33 +918,39 @@ class DdsRepository:
                     FROM dds.outbox
                     WHERE sent_at IS NULL
                     ORDER BY id
-                    LIMIT 1
-                    """
+                    LIMIT %(batch_size)s
+                    """,
+                    {
+                        'batch_size': batch_size
+                    }
                 )
 
-                row = cur.fetchone()
+            rows = cur.fetchall()
 
-                if row is None:
-                    return None
-
-                return {
+            return [
+                {
                     'id': row[0],
                     'payload': row[1]
                 }
+                for row in rows
+            ]
 
-    # Отмечаем отправленное событие в Outbox
-    def mark_event_sent(self, event_id: int) -> None:
+    # Отмечаем отправленные события в Outbox
+    def mark_events_sent(self, event_ids: list[int]) -> None:
+        if not event_ids:
+            return
+
         with self._db.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
                     UPDATE dds.outbox
                     SET sent_at = %(sent_at)s
-                    WHERE id = %(event_id)s
+                    WHERE id = ANY(%(event_ids)s)
                     AND sent_at IS NULL
                     """,
                     {
-                        'event_id': event_id,
+                        'event_ids': event_ids,
                         'sent_at': datetime.utcnow()
                     }
                 )

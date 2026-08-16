@@ -21,23 +21,20 @@ class OutboxPublisher:
 
         batch_size = 50
 
-        for _ in range(batch_size):
-            event = self._repository.get_unsent_event()
+        events = self._repository.get_unsent_events(
+            batch_size
+        )
 
-            if event is None:
-                break
+        sent_event_ids = []
 
+        for event in events:
             try:
                 self._producer.produce(
                     event['payload']
                 )
 
-                self._repository.mark_event_sent(
+                sent_event_ids.append(
                     event['id']
-                )
-
-                self._logger.info(
-                    f"Событие id={event['id']} успешно отправлено"
                 )
 
             except Exception:
@@ -45,5 +42,13 @@ class OutboxPublisher:
                     f"Не удалось отправить событие id={event['id']}"
                 )
                 break
+
+        self._repository.mark_events_sent(
+            sent_event_ids
+        )
+
+        self._logger.info(
+            f"Успешно отправлено событий: {len(sent_event_ids)}"
+        )
 
         self._logger.info(f"{datetime.utcnow()}: OUTBOX FINISH")
