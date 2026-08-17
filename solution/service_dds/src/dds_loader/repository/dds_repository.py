@@ -245,20 +245,21 @@ class DdsRepository:
                         }
                     )
 
-                # Формируем выходное сообщение для CDM
-                output_message = {
-                    'order_id': str(h_order_pk),
-                    'user_id': str(h_user_pk),
-                    'status': payload['status'],
-                    'products': output_products
-                }
-                # Записываем выходное сообщение в Outbox в рамках одной транзакции
-                self._insert_outbox(
-                    cur,
-                    h_order_pk,
-                    output_message,
-                    load_dt
-                )
+                # В слой CDM должны попадать только закрытые заказы
+                if payload['status'] == 'CLOSED':
+                    # Формируем выходное сообщение для CDM
+                    output_message = {
+                        'order_id': str(h_order_pk),
+                        'user_id': str(h_user_pk),
+                        'products': output_products
+                    }
+                    # Записываем выходное сообщение в Outbox в рамках одной транзакции
+                    self._insert_outbox(
+                        cur,
+                        h_order_pk,
+                        output_message,
+                        load_dt
+                    )
 
     def _insert_h_user(
         self,
@@ -897,6 +898,7 @@ class DdsRepository:
                 %(payload)s::jsonb,
                 %(created_at)s
             )
+            ON CONFLICT (order_id) DO NOTHING
             """,
             {
                 'order_id': order_id,
