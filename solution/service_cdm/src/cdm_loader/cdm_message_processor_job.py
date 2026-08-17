@@ -15,7 +15,7 @@ class CdmMessageProcessor:
         self._consumer = consumer
         self._repository = repository
         self._logger = logger
-        self._batch_size = 100
+        self._batch_size = 300
 
     def run(self) -> None:
         self._logger.info(f"{datetime.utcnow()}: START")
