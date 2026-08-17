@@ -20,27 +20,20 @@ class DdsMessageProcessor:
     def run(self) -> None:
         self._logger.info(f"{datetime.utcnow()}: START")
 
-        messages = []
-
         for _ in range(self._batch_size):
             message = self._consumer.consume()
 
             if message is None:
                 break
 
-            messages.append(message)
+            try:
+                self._repository.save_order(message)
+                self._consumer.commit()
 
-        if not messages:
-            self._logger.info(f"{datetime.utcnow()}: FINISH")
-            return
-
-        try:
-            self._repository.save_orders(messages)
-            self._consumer.commit()
-
-        except Exception:
-            self._logger.exception(
-                "Ошибка обработки batch сообщений из Kafka"
-            )
+            except Exception:
+                self._logger.exception(
+                    "Ошибка обработки сообщения из Kafka"
+                )
+                break
 
         self._logger.info(f"{datetime.utcnow()}: FINISH")
