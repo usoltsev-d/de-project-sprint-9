@@ -4,3 +4,4 @@ flask
 psycopg
 psycopg-binary
 pydantic
+psycopg-pool

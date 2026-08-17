@@ -43,7 +43,7 @@ if __name__ == '__main__':
     scheduler.add_job(
         func=proc.run,
         trigger="interval",
-        seconds=25
+        seconds=5
     )
 
     scheduler.add_job(
