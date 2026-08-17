@@ -26,6 +26,10 @@ class CdmMessageProcessor:
             if message is None:
                 break
 
+            if message.get('status') != 'CLOSED':
+                self._consumer.commit()
+                continue
+
             try:
                 # Обновляем витрины CDM
                 self._repository.save_order(message)

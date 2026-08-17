@@ -8,9 +8,7 @@ BEGIN
         created_at  TIMESTAMP NOT NULL,
         sent_at     TIMESTAMP NULL,
         CONSTRAINT outbox_pkey
-            PRIMARY KEY (id),
-        CONSTRAINT outbox_order_id_key
-            UNIQUE (order_id)
+            PRIMARY KEY (id)
     );
 
     CREATE INDEX IF NOT EXISTS ix_outbox_unsent
