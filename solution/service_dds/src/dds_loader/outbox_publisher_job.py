@@ -19,7 +19,7 @@ class OutboxPublisher:
     def run(self) -> None:
         self._logger.info(f"{datetime.utcnow()}: OUTBOX START")
 
-        batch_size = 50
+        batch_size = 100
 
         # Забираем пачку событий из Outbox
         events = self._repository.get_unsent_events(

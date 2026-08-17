@@ -32,7 +32,7 @@ if __name__ == '__main__':
     )
 
     scheduler = BackgroundScheduler()
-    scheduler.add_job(func=proc.run, trigger="interval", seconds=25)
+    scheduler.add_job(func=proc.run, trigger="interval", seconds=5)
     scheduler.start()
 
     app.run(debug=True, host='0.0.0.0', use_reloader=False)
