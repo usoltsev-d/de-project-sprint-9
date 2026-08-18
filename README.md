@@ -74,6 +74,8 @@ migrations/DDL/
 
 ## Container Registry
 
+Реестр в Yandex Cloud: [de-registry](https://console.yandex.cloud/folders/b1gms9nnbdnmbt4kfurg/container-registry/registries/crpqg2ustmet33rjclbf/overview)
+
 Актуальные образы сервисов, используемые при развёртывании:
 
 ```text
